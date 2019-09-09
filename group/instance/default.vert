@@ -1,23 +1,25 @@
 precision highp float;
-uniform float sineTime;
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
+attribute vec3 instancePosition;
+attribute vec2 instanceUV;
+attribute vec3 instnaceNormal;
 attribute vec3 position;
-attribute vec3 translate;
-attribute vec3 scale;
-attribute vec4 color;
+attribute vec3 size;
 attribute vec4 rotation;
-// varying vec3 vPosition;
+attribute vec4 color;
+varying vec2 vUv;
 varying vec4 vColor;
 
-// http://www.geeks3d.com/20141201/how-to-rotate-a-vertex-by-a-quaternion-in-glsl/
 vec3 applyQuaternionToVector(vec4 q,vec3 v){
   return v+2.*cross(q.xyz,cross(q.xyz,v)+q.w*v);
 }
 
 void main(){
-  vec3 pos=translate+applyQuaternionToVector(rotation,position*scale);
-  // vec3 pos=translate+position;
+  vec4 unitPosition=modelViewMatrix*vec4(position,1.);
+  vec3 iPos=applyQuaternionToVector(rotation,instancePosition);
+  unitPosition.xyz+=iPos*size;
   vColor=color;
-  gl_Position=projectionMatrix*modelViewMatrix*vec4(pos,1.);
+  vUv=instanceUV;
+  gl_Position=projectionMatrix*unitPosition;
 }

@@ -2,12 +2,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { DragControls } from 'three/examples/jsm/controls/DragControls';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { Object3D, Vector3 } from 'three';
-import { DrawingTransform } from './transform';
-import InstanceGroup from './group/instance/instanceGroup';
-import RenderGroup from './group/base/renderGroup';
+import { Vector3, Group } from 'three';
 import _ from 'lodash';
-import LineGroup from './group/line/lineGroup';
+import LineSegementGroup from './group/lineSegement/lineSegementGroup';
+import RenderGroup from './group/base/renderGroup';
+import RectangleGroup from './group/rectangle/rectangleGroup';
+import debounce from 'lodash/debounce';
+import InstanceGroup from './group/instance/instanceGroup';
+import InstancePlaneGroup from './group/instance/instancePlaneGroup';
 
 
 /**
@@ -23,40 +25,77 @@ import LineGroup from './group/line/lineGroup';
  * 4. shader
  */
 
+interface VLMouse {
+  clientX: number;
+  clientY: number;
+  x: number;
+  y: number;
+  pressed: boolean;
+  clicked: boolean;
+}
 class VL {
-  public camera: THREE.Camera;
-  public renderer: THREE.WebGLRenderer;
+  public readonly camera: THREE.OrthographicCamera | THREE.PerspectiveCamera;
+  public readonly renderer: THREE.WebGLRenderer;
+  public readonly element: HTMLElement;
   public width: number;
   public height: number;
-  public scene: THREE.Scene;
-  public renderGroups: Array<RenderGroup<THREE.Object3D>> = [];
-  private controller: OrbitControls;
+  public readonly scene: THREE.Scene;
+  public readonly renderGroups: Array<RenderGroup<any, any>> = [];
+  public readonly raycaster: THREE.Raycaster = new THREE.Raycaster();
+  public mouse: VLMouse = {
+    clientX: 0,
+    clientY: 0,
+    x: 0,
+    y: 0,
+    pressed: false,
+    clicked: false,
+  };
+  private orbitController: OrbitControls | undefined;
   private stats: Stats;
+  private is3D: boolean;
 
-  public constructor(parent: HTMLElement) {
 
-    this.width = parent.clientWidth;
-    this.height = parent.clientHeight;
+  public set onUpdate(func: () => void) {
+    this._update = func;
+  }
+  public set onRenderFinished(func: () => void) {
+    this._rendered = func;
+  }
+  private _beforeUpdate: () => void;
+  private _update: () => void;
+  private _rendered: () => void;
+
+  public constructor(element: HTMLElement, use3D?: boolean) {
+    this.element = element;
+    this.width = element.clientWidth;
+    this.height = element.clientHeight;
+    this.is3D = use3D ? use3D : false;
+
+    // event checked
+    this._beforeUpdate = () => {/** empty */ };
+    this._update = () => { /** empty */ };
+    this._rendered = () => {/** empty */ };
+
     // init renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(this.width, this.height);
-
-    parent.appendChild(this.renderer.domElement);
-    console.log(`W : ${this.width}, H : ${this.height}`);
+    element.appendChild(this.renderer.domElement);
     // init scene
     this.scene = new THREE.Scene();
-
-    // init camera
-    // this.camera =
-    // new THREE.PerspectiveCamera(70, this.width / this.height, 0.001, 100);
-
-    this.camera = new THREE.OrthographicCamera(-this.width / 2,
-      this.width / 2, this.height / 2, -this.height / 2, -10000, 10000);
-    this.camera.position.z = 2;
-
-
-
+    // this.camera = new THREE.PerspectiveCamera(60, this.width / this.height, 1, 10000);
+    if (this.is3D) {
+      this.camera = new THREE.PerspectiveCamera(60, this.width / this.height, 1, 10000);
+      this.camera.position.z = 500;
+    } else {
+      this.camera = new THREE.OrthographicCamera(
+        -this.width / 2,
+        this.width / 2,
+        -this.height / 2,
+        this.height / 2,
+        -10000, 10000);
+      this.camera.position.z = 500;
+    }
     // 보편적인 시각화에 라이팅은 필요하지 않으므로 우선 제거
     // const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
     // const pointLight = new THREE.PointLight(0xffffff, 0.8);
@@ -68,52 +107,84 @@ class VL {
     // 라이트 끝
 
     this.scene.add(this.camera);
-    // const controls = new OrbitControls(this.camera, this.renderer.domElement);
-    // controls.enablePan = true;
-    // controls.enableRotate = false;
-
-    // const constrols = new DragControls(this.camera, this.renderer.domElement);
-    // controls.addEventListener('change', render);
-
     this.render();
-    console.log(this.scene);
     requestAnimationFrame(this.render.bind(this));
 
-
-    console.log('VL CREATED');
-
     this.camera.up = new Vector3(0, 0, 1);
-    this.controller = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controller.enableRotate = false;
-
+    // this.controller = new OrbitControls(this.camera, this.renderer.domElement);
+    // this.controller.enableRotate = false;
 
     // Stat
     this.stats = new Stats();
-    parent.appendChild(this.stats.dom);
+    element.appendChild(this.stats.dom);
+    element.addEventListener('mousemove', this.mouseMove.bind(this));
+    window.addEventListener('resize', debounce(this.resize.bind(this), 100), false);
+  }
+  public createGroup<G extends RenderGroup<any, any>>(
+    type: new (scene: THREE.Scene, count: number) => G,
+    count: number) {
+    const group = new type(this.scene, count)
+      .setCollisionProperties(this.camera, this.width, this.height);
+    this.renderGroups.push(group);
+    return group;
+  }
+  public createPlaneInstanceGroup(
+    meshCount: number,
+    radius: number,
+    segements: number) {
+    const group = new InstancePlaneGroup(this.scene, meshCount, radius, segements)
+      .setCollisionProperties(this.camera, this.width, this.height);
+    this.renderGroups.push(group);
+    return group;
+  }
+  public createInstanceGroup<G extends InstanceGroup>(
+    type: new (scene: THREE.Scene, count: number) => G,
+    count: number,
+  ) {
+    const group = new type(this.scene, count)
+      .setCollisionProperties(this.camera, this.width, this.height);
+    this.renderGroups.push(group);
+    return group;
   }
 
-  public createInstanceGroup(unit: THREE.BufferGeometry, count: number) {
-    const ig = new InstanceGroup(this.scene, unit, count);
-    ig.attachToScene();
-    this.renderGroups.push(ig);
-    return ig;
+  public createLineSegementGroup(count: number) {
+    const lg = new LineSegementGroup(this.scene, count)
+      .setCollisionProperties(this.camera, this.width, this.height);
+    this.renderGroups.push(lg);
+    return lg;
   }
-  public createLineGroup(count: number) {
-    const bg = new LineGroup(this.scene, [
-      -50, 0, 0, 50, 0, 0,
-      -50, 10, 0, 50, 10, 0
-    ], count);
-    bg.attachToScene();
-    this.renderGroups.push(bg);
-    console.log(this.scene);
-    return bg;
+  public createRectangleGroup(count: number) {
+    const rg = new RectangleGroup(this.scene, count)
+      .setCollisionProperties(this.camera, this.width, this.height);
+    this.renderGroups.push(rg);
+    return rg;
   }
-
-  public addRenderGroup(renderGroup: RenderGroup<THREE.Object3D>) {
-    this.renderGroups.push(renderGroup);
+  public setBackgroundColor(hex: string): void;
+  public setBackgroundColor(r: number, g: number, b: number): void;
+  public setBackgroundColor(r: string | number, g?: number, b?: number) {
+    this.scene.background = new THREE.Color(...arguments);
   }
 
-  public removeRenderGroup(renderGroup: RenderGroup<THREE.Object3D>) {
+  public resize() {
+    const aspect = this.element.clientWidth / this.element.clientHeight;
+    this.width = this.element.clientWidth;
+    this.height = this.element.clientHeight;
+
+    if (this.camera instanceof (THREE.OrthographicCamera)) {
+      this.camera.left = -this.width / 2;
+      this.camera.top = -this.height / 2;
+      this.camera.right = this.width / 2;
+      this.camera.bottom = this.height / 2;
+    } else {
+      const cam = this.camera as THREE.PerspectiveCamera;
+      cam.aspect = aspect;
+    }
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(this.width, this.height);
+  }
+
+
+  public removeRenderGroup(renderGroup: RenderGroup<any, any>) {
     return this.removeRenderGroupById(renderGroup.id);
   }
   public removeRenderGroupById(id: string) {
@@ -128,42 +199,75 @@ class VL {
     }
 
   }
-  public addObject() {
-    // add object
-    const material = new THREE.MeshPhongMaterial({ side: THREE.DoubleSide });
-    const object = new THREE.Mesh(new THREE.SphereBufferGeometry(75, 20, 10), material);
-    object.position.set(0, 0, 0);
-    const o: Object3D = new Object3D();
-    this.scene.add(object);
-    const t = new DrawingTransform(3);
-    console.log(t.geometry);
-    this.scene.add(t);
+
+
+  private mouseMove(event: MouseEvent) {
+    const pixelBuffer = new Uint8Array(4);
+    // this.renderer.readRenderTargetPixels()
+    this.mouse.clientX = event.clientX;
+    this.mouse.clientY = event.clientY;
+    this.mouse.x = (event.clientX / this.width) * 2 - 1;
+    this.mouse.y = (event.clientY / this.height) * 2 - 1;
+
   }
+
+  // TODO 마우스 제어 영역
+  private mousePressed(event: MouseEvent) {
+    event.preventDefault();
+  }
+  private mouseDragging(event: MouseEvent) {
+    event.preventDefault();
+  }
+  private mouseDragStart(event: MouseEvent) {
+    event.preventDefault();
+  }
+  private mouseDragEnd(event: MouseEvent) {
+    event.preventDefault();
+  }
+  private mouseClick(event: MouseEvent) {
+    event.preventDefault();
+  }
+  private mouseRelease(event: MouseEvent) {
+    event.preventDefault();
+  }
+
   private render() {
     requestAnimationFrame(this.render.bind(this));
     this.onRender();
   }
+
   private onRender() {
-    this.camera.lookAt(this.scene.position);
+    // this.camera.lookAt(this.scene.position);
+    // this.camera.updateMatrixWorld();
+    (this.camera as THREE.OrthographicCamera).updateProjectionMatrix();
+    this.raycaster.setFromCamera(this.mouse, this.camera);
 
     for (const g of this.renderGroups) {
-      g.onUpdate();
+      g.update();
     }
+    this._update();
+    // console.log(arr);
+    // this.mouse.pressed = false;
+    this.mouse.clicked = false;
     for (const g of this.renderGroups) {
-      g.onRender();
+      g.render();
     }
     if (this.stats && this.stats.update !== undefined) {
       this.stats.update();
     }
     // console.log(stats.update());
 
-    if (this.controller && this.controller.update !== undefined) {
-      this.controller.enableRotate = false;
-      this.controller.update();
+    this.camera.updateProjectionMatrix();
+    if (this.orbitController && this.orbitController.update !== undefined) {
+      this.orbitController.enableRotate = false;
+      this.orbitController.update();
     }
 
     this.renderer.render(this.scene, this.camera);
+    this._rendered();
   }
+
+
 }
 
 export default VL;
