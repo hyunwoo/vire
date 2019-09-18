@@ -1,5 +1,6 @@
 
 import RenderGroup from './renderGroup';
+import RenderObject from './renderObject';
 
 
 export interface GroupAnimation {
@@ -7,21 +8,23 @@ export interface GroupAnimation {
   animationLerpValue: number;
 }
 
-export type RenderGroupAttributes<P extends ShapeProperties> = {
+export type RenderGroupAttributes<P extends ShapeVertexProperties> = {
   readonly [name in keyof P]: THREE.BufferAttribute
 };
 
-export type RenderProperties<P extends ShapeProperties> = {
+export type RenderProperties<P extends ShapeVertexProperties> = {
   readonly [name in keyof P]: Float32Array
 };
 
 
-export interface ShapeProperties {
-  readonly [name: string]: number;
-}
-export interface Shape {
-  readonly vertCount: number;
-  readonly prop: ShapeProperties;
+export interface ShapeDefinition<P extends ShapeVertexProperties> {
+  readonly shapePropoperties: P;
+  readonly unitVertCount: number;
 }
 
-export { RenderGroup };
+
+export interface ShapeVertexProperties {
+  readonly [name: string]: number;
+}
+
+export { RenderGroup, RenderObject };

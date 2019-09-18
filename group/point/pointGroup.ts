@@ -5,29 +5,23 @@ import vs from '!!raw-loader!./default.vert';
 // @ts-ignore
 import fs from '!!raw-loader!./default.frag';
 
-import { RenderGroup, ShapeProperties } from '../base';
-import LineSegementObject from './lineSegementObject';
+import { RenderGroup } from '../base';
+import PointObject from './pointObject';
+import { PointProperties, PointDefinition } from './index';
 
 // TODO BufferGroup에 대한 재정의가 필요하다.
 
-export interface LineSegementProperties extends ShapeProperties {
-  position: number;
-  color: number;
-}
 
-export default class LineSegementGroup
-  extends RenderGroup<LineSegementProperties, LineSegementObject> {
+
+export default class PoingGroup
+  extends RenderGroup<PointProperties, PointObject> {
   // private material: THREE.Material;
-  protected geometry!: THREE.BufferGeometry;
+  // protected geometry!: THREE.BufferGeometry;
 
   public constructor(scene: THREE.Scene, count: number) {
-    super(scene,
-      {
-        position: 3,
-        color: 4
-      },
+    super(scene, PointDefinition,
       THREE.BufferGeometry,
-      THREE.Line);
+      THREE.Points);
 
     const material = new THREE.RawShaderMaterial({
       uniforms: {
@@ -42,10 +36,12 @@ export default class LineSegementGroup
       depthTest: false
     });
 
-    this.initializeAttributes(count, 2);
+    this.initializeAttributes(count, PointDefinition.unitVertCount);
     this.applyMaterial(material);
-    this.createObjects(LineSegementObject);
+    this.createObjects(PointObject);
+    console.log(this.props);
     this.props.color.fill(1);
+    this.props.position.fill(0);
   }
 
 

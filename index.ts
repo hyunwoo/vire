@@ -2,14 +2,16 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { DragControls } from 'three/examples/jsm/controls/DragControls';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { Vector3, Group } from 'three';
+import { Vector3, Group, Vector2 } from 'three';
 import _ from 'lodash';
 import LineSegementGroup from './group/lineSegement/lineSegementGroup';
 import RenderGroup from './group/base/renderGroup';
 import RectangleGroup from './group/rectangle/rectangleGroup';
 import debounce from 'lodash/debounce';
 import InstanceGroup from './group/instance/instanceGroup';
-import InstancePlaneGroup from './group/instance/instancePlaneGroup';
+import InstanceCircleGroup from './group/instance/instanceCircleGroup';
+import ElementGroup from './group/texts/textGroup';
+import { InstancePlaneGroup } from './group/instance';
 
 
 /**
@@ -24,7 +26,6 @@ import InstancePlaneGroup from './group/instance/instancePlaneGroup';
  * 3. position, scale 등에 대한 animation
  * 4. shader
  */
-
 interface VLMouse {
   clientX: number;
   clientY: number;
@@ -33,7 +34,7 @@ interface VLMouse {
   pressed: boolean;
   clicked: boolean;
 }
-class VL {
+class VIRE {
   public readonly camera: THREE.OrthographicCamera | THREE.PerspectiveCamera;
   public readonly renderer: THREE.WebGLRenderer;
   public readonly element: HTMLElement;
@@ -53,17 +54,25 @@ class VL {
   private orbitController: OrbitControls | undefined;
   private stats: Stats;
   private is3D: boolean;
+  private currentFrame: number = 0;
+  private time: number = 0;
+  private deltaTime: number = 0;
+  private startTime: number = new Date().getTime();
+  private flagTime: number = new Date().getTime();
+  private requestAnimationID: number = 0;
+  private debounceResize = debounce(this.resize.bind(this), 100);
 
 
-  public set onUpdate(func: () => void) {
+
+  public set onUpdate(func: (time: number, deltaTime: number, currentFrame: number) => void) {
     this._update = func;
   }
-  public set onRenderFinished(func: () => void) {
+  public set onRenderFinished(func: (time: number, deltaTime: number, currentFrame: number) => void) {
     this._rendered = func;
   }
-  private _beforeUpdate: () => void;
-  private _update: () => void;
-  private _rendered: () => void;
+  private _beforeUpdate: (time: number, deltaTime: number, currentFrame: number) => void;
+  private _update: (time: number, deltaTime: number, currentFrame: number) => void;
+  private _rendered: (time: number, deltaTime: number, currentFrame: number) => void;
 
   public constructor(element: HTMLElement, use3D?: boolean) {
     this.element = element;
@@ -85,6 +94,7 @@ class VL {
     this.scene = new THREE.Scene();
     // this.camera = new THREE.PerspectiveCamera(60, this.width / this.height, 1, 10000);
     if (this.is3D) {
+      console.log('[VIRE]', 'create 3d Camera');
       this.camera = new THREE.PerspectiveCamera(60, this.width / this.height, 1, 10000);
       this.camera.position.z = 500;
     } else {
@@ -108,51 +118,75 @@ class VL {
 
     this.scene.add(this.camera);
     this.render();
-    requestAnimationFrame(this.render.bind(this));
 
     this.camera.up = new Vector3(0, 0, 1);
     // this.controller = new OrbitControls(this.camera, this.renderer.domElement);
     // this.controller.enableRotate = false;
 
     // Stat
-    this.stats = new Stats();
-    element.appendChild(this.stats.dom);
+
     element.addEventListener('mousemove', this.mouseMove.bind(this));
-    window.addEventListener('resize', debounce(this.resize.bind(this), 100), false);
+    window.addEventListener('resize', this.debounceResize, false);
   }
-  public createGroup<G extends RenderGroup<any, any>>(
-    type: new (scene: THREE.Scene, count: number) => G,
-    count: number) {
-    const group = new type(this.scene, count)
-      .setCollisionProperties(this.camera, this.width, this.height);
-    this.renderGroups.push(group);
-    return group;
+
+  public appendStats(style: Partial<CSSStyleDeclaration>) {
+    this.stats = new Stats();
+    Object.assign(this.stats.dom.style, style);
+    this.element.appendChild(this.stats.dom);
   }
-  public createPlaneInstanceGroup(
-    meshCount: number,
-    radius: number,
-    segements: number) {
-    const group = new InstancePlaneGroup(this.scene, meshCount, radius, segements)
-      .setCollisionProperties(this.camera, this.width, this.height);
-    this.renderGroups.push(group);
-    return group;
+
+  public toScreenPosition(x: number, y: number, z?: number) {
+    const vec = new THREE.Vector3(x, y, z);
+    vec.project(this.camera);
+    return {
+      x: vec.x,
+      y: vec.y
+    };
   }
-  public createInstanceGroup<G extends InstanceGroup>(
-    type: new (scene: THREE.Scene, count: number) => G,
+  public createElementGroup() {
+    const tg = new ElementGroup(this.element, {
+      zIndex: '0'
+    });
+    console.log(tg);
+    return tg;
+  }
+
+  // 굳이 모든 RenderGroup을 상속한 도형을 명시하는 이유는 사용할 때 명확성을 위함.
+  public createGroup<P extends RenderGroup<any, any>>(
+    type: new (scene: THREE.Scene, count: number, ...args) => P,
+    count: number
+  ): P;
+  public createGroup(
+    type: new (scene: THREE.Scene, count: number) => LineSegementGroup,
+    count: number
+  ): LineSegementGroup;
+  public createGroup(
+    type: new (scene: THREE.Scene, count: number, ...args) => InstanceCircleGroup,
     count: number,
-  ) {
-    const group = new type(this.scene, count)
+    radius?: number,
+    segements?: number,
+  ): InstanceCircleGroup;
+  public createGroup(
+    type: new (scene: THREE.Scene, count: number, ...args) => InstancePlaneGroup,
+    count: number,
+    width?: number,
+    height?: number,
+    widthSegements?: number,
+    heightSegements?: number,
+  ): InstancePlaneGroup;
+  public createGroup(
+    type: new (scene: THREE.Scene, count: number, ...args) => RectangleGroup,
+    count: number,
+  ): RectangleGroup;
+  public createGroup<G extends RenderGroup<any, any>>(
+    type: new (scene: THREE.Scene, count: number, ...args) => G,
+    count: number, ...args) {
+    const group = new type(this.scene, count, ...args)
       .setCollisionProperties(this.camera, this.width, this.height);
     this.renderGroups.push(group);
     return group;
   }
 
-  public createLineSegementGroup(count: number) {
-    const lg = new LineSegementGroup(this.scene, count)
-      .setCollisionProperties(this.camera, this.width, this.height);
-    this.renderGroups.push(lg);
-    return lg;
-  }
   public createRectangleGroup(count: number) {
     const rg = new RectangleGroup(this.scene, count)
       .setCollisionProperties(this.camera, this.width, this.height);
@@ -164,6 +198,7 @@ class VL {
   public setBackgroundColor(r: string | number, g?: number, b?: number) {
     this.scene.background = new THREE.Color(...arguments);
   }
+
 
   public resize() {
     const aspect = this.element.clientWidth / this.element.clientHeight;
@@ -183,7 +218,6 @@ class VL {
     this.renderer.setSize(this.width, this.height);
   }
 
-
   public removeRenderGroup(renderGroup: RenderGroup<any, any>) {
     return this.removeRenderGroupById(renderGroup.id);
   }
@@ -197,7 +231,18 @@ class VL {
     } else {
       throw new Error(`[Group not found] ${id}에 해당하는 그룹을 찾을 수 없습니다.`);
     }
+  }
 
+  public release() {
+    this.scene.dispose();
+    this.renderer.dispose();
+    this.renderer.forceContextLoss();
+    window.cancelAnimationFrame(this.requestAnimationID);
+    window.removeEventListener('resize', this.debounceResize);
+    // @ts-ignore release force
+    this.renderer.domElement = null;
+    // @ts-ignore release force
+    this.renderer = null;
   }
 
 
@@ -208,7 +253,6 @@ class VL {
     this.mouse.clientY = event.clientY;
     this.mouse.x = (event.clientX / this.width) * 2 - 1;
     this.mouse.y = (event.clientY / this.height) * 2 - 1;
-
   }
 
   // TODO 마우스 제어 영역
@@ -232,7 +276,7 @@ class VL {
   }
 
   private render() {
-    requestAnimationFrame(this.render.bind(this));
+    this.requestAnimationID = requestAnimationFrame(this.render.bind(this));
     this.onRender();
   }
 
@@ -245,7 +289,7 @@ class VL {
     for (const g of this.renderGroups) {
       g.update();
     }
-    this._update();
+    this._update(this.time, this.deltaTime, this.currentFrame);
     // console.log(arr);
     // this.mouse.pressed = false;
     this.mouse.clicked = false;
@@ -256,7 +300,6 @@ class VL {
       this.stats.update();
     }
     // console.log(stats.update());
-
     this.camera.updateProjectionMatrix();
     if (this.orbitController && this.orbitController.update !== undefined) {
       this.orbitController.enableRotate = false;
@@ -264,11 +307,18 @@ class VL {
     }
 
     this.renderer.render(this.scene, this.camera);
-    this._rendered();
+    this._rendered(this.time, this.deltaTime, this.currentFrame);
+
+    this.currentFrame++;
+    const currentTime = new Date().getTime();
+    this.time = (this.flagTime - this.startTime) * 0.001;
+    this.deltaTime = (currentTime - this.flagTime) * 0.001;
+    this.flagTime = currentTime;
+
   }
 
 
 }
 
-export default VL;
+export default VIRE;
 

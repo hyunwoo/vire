@@ -1,29 +1,26 @@
-import { ShapeProperties, RenderGroup, RenderProperties } from './index';
-import helper from '@/vl/helper';
+import { ShapeVertexProperties, RenderGroup, RenderProperties } from './index';
+import helper from '@/vire/helper';
 
-
-
-export default abstract class RenderObject<P extends ShapeProperties> {
+export default abstract class RenderObject<P extends ShapeVertexProperties> {
   public readonly index: number;
   public readonly parent: RenderGroup<P, this>;
   public readonly props: RenderProperties<P>;
   public readonly reservedProps: RenderProperties<P>;
   protected readonly propertyKeys: Array<keyof P>;
-  protected readonly propertyOffsets: {
-    [name in keyof P]: number;
-  };
-
+  protected readonly propertyOffsets: { [name in keyof P]: number };
+  protected readonly unitVertCount: number;
 
   public constructor(
     parent: RenderGroup<P, any>,
     unit: P,
     props: RenderProperties<P>,
     index: number,
-    unitVertCount: number) {
-
+    unitVertCount: number
+  ) {
     this.parent = parent;
     this.props = props;
     this.index = index;
+    this.unitVertCount = unitVertCount;
 
     // 초기화 부터 다시 시...바....
     this.propertyKeys = Object.keys(unit) as Array<keyof P>;
@@ -53,7 +50,9 @@ export default abstract class RenderObject<P extends ShapeProperties> {
       const dist = helper.math.lerpFloat32Array(
         this.props[prop],
         this.reservedProps[prop],
-        this.propertyOffsets[prop], 0.1);
+        this.propertyOffsets[prop],
+        0.1
+      );
       if (dist > 0.01) {
         complete = false;
       }
@@ -65,27 +64,6 @@ export default abstract class RenderObject<P extends ShapeProperties> {
     this.checkCollision();
   }
 
-  public move(...any: number[]): this {
-    return this;
-  }
-  public position(...any: number[]): this {
-    return this;
-  }
-  public rotate(...any: number[]): this {
-    return this;
-  }
-  public size(...any: number[]): this {
-    return this;
-  }
-  public color(...any: number[]): this {
-    return this;
-  }
-  public colorHSL(...any: number[]): this {
-    return this;
-  }
-  public colorHEX(...any: any): this {
-    return this;
-  }
 
 
   protected setProperty(name: keyof P, value: number, offset: number) {

@@ -1,21 +1,21 @@
-import LineSegementGroup, { Rectangle2DProperties } from './rectangleGroup';
+import LineSegementGroup from './rectangleGroup';
 import * as THREE from 'three';
 import { Vector3 } from 'three';
-import { enumerable } from '@/vl/lib/decorator/enumerable';
+import { enumerable } from '@/vire/lib/decorator/enumerable';
 import RenderObject from '../base/renderObject';
 import { RenderGroup, RenderProperties } from '../base';
+import { RectangleProperties } from './index';
 
 
 
-export default class Rectangle2DObject
-  extends RenderObject<Rectangle2DProperties> {
-
+export default class RectangleObject
+  extends RenderObject<RectangleProperties> {
   private _width: number = 0;
   private _height: number = 0;
   public constructor(
-    parent: RenderGroup<Rectangle2DProperties, any>,
-    unit: Rectangle2DProperties,
-    props: RenderProperties<Rectangle2DProperties>,
+    parent: RenderGroup<RectangleProperties, any>,
+    unit: RectangleProperties,
+    props: RenderProperties<RectangleProperties>,
     index: number,
     unitVertCount: number) {
     super(parent, unit, props, index, unitVertCount);

@@ -1,12 +1,18 @@
 import { v1 as uuid } from 'uuid';
 import * as THREE from 'three';
-import { GroupAnimation, ShapeProperties, RenderGroupAttributes, RenderProperties } from './index';
+import {
+  GroupAnimation,
+  ShapeVertexProperties,
+  RenderGroupAttributes,
+  RenderProperties,
+  ShapeDefinition
+} from './index';
 import RenderObject from './renderObject';
 
 
 
 export default abstract class RenderGroup<
-  P extends ShapeProperties, R extends RenderObject<P>> {
+  P extends ShapeVertexProperties, R extends RenderObject<P>> {
   public readonly id: string;
   protected readonly material: THREE.Material;
   protected readonly geometry: THREE.BufferGeometry;
@@ -30,6 +36,7 @@ export default abstract class RenderGroup<
     depthWrite: false,
     depthTest: false
   };
+
 
   protected animation: GroupAnimation = {
     use: true,
@@ -55,38 +62,38 @@ export default abstract class RenderGroup<
    * ShapeProperties를 extends한 기본 도형의 정보를 바탕으로 RenderObject를 제공하고,
    * Collision Detect, Material 등을 설정 할 수 있다.
    * @param scene
-   * @param unit
+   * @param shapeDefinition
    */
   public constructor(
-    scene: THREE.Scene, unit: P);
+    scene: THREE.Scene, shapeDefinition: ShapeDefinition<P>);
   /**
    *
    * @param scene
-   * @param unit
+   * @param shapeDefinition
    * @param geometry
    * @param mesh
    */
   public constructor(
-    scene: THREE.Scene, unit: P,
+    scene: THREE.Scene, shapeDefinition: ShapeDefinition<P>,
     geometry: new () => THREE.BufferGeometry,
     mesh: new () => THREE.Object3D);
   /**
    *
    * @param scene
-   * @param unit
+   * @param shapeDefinition
    * @param geometry
    * @param mesh
    */
   public constructor(
-    scene: THREE.Scene, unit: P,
+    scene: THREE.Scene, shapeDefinition: ShapeDefinition<P>,
     geometry?: new () => THREE.BufferGeometry,
     mesh?: new (geometry: THREE.BufferGeometry, material: THREE.Material) => THREE.Object3D) {
 
-    this.propertyKeys = Object.keys(unit);
     geometry = geometry ? geometry : THREE.BufferGeometry;
     mesh = mesh ? mesh : THREE.Mesh;
     this.geometry = new geometry();
-    this.unit = unit;
+    this.unit = shapeDefinition.shapePropoperties;
+    this.propertyKeys = Object.keys(this.unit);
     // @ts-ignore 초기화 필요
     this.attr = {};
     // @ts-ignore 초기화 필요
@@ -161,7 +168,7 @@ export default abstract class RenderGroup<
     x = x / this.width * 2 - 1;
     y = -(y / this.height * 2 - 1);
     const point = new THREE.Vector2(x, y);
-    this.geometry.computeBoundingSphere();
+    // this.geometry.computeBoundingSphere();
     this.raycaster.setFromCamera(point, this.camera);
     this.raycaster.linePrecision = 5;
 

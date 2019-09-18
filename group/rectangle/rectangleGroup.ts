@@ -1,37 +1,23 @@
 import * as THREE from 'three';
+import RectangleObject from './rectangleObject';
+import { RenderGroup } from '../base';
+import { RectangleProperties, RectangleDefinition } from './index';
 
 // @ts-ignore
 import vs from '!!raw-loader!./default.vert';
 // @ts-ignore
 import fs from '!!raw-loader!./default.frag';
-
-import { RenderGroup, ShapeProperties } from '../base';
-import Rectangle2DObject from './rectangleObject';
-
 // TODO BufferGroup에 대한 재정의가 필요하다.
 
-export interface Rectangle2DProperties extends ShapeProperties {
-  position: number;
-  translate: number;
-  color: number;
-  pivot: number;
-  rotate: number;
-}
+
 
 export default class RectangleGroup
-  extends RenderGroup<Rectangle2DProperties, Rectangle2DObject> {
+  extends RenderGroup<RectangleProperties, RectangleObject> {
   // private material: THREE.Material;
   protected geometry!: THREE.BufferGeometry;
 
   public constructor(scene: THREE.Scene, count: number) {
-    super(scene,
-      {
-        position: 3,
-        translate: 3,
-        color: 4,
-        pivot: 3,
-        rotate: 1
-      },
+    super(scene, RectangleDefinition,
       THREE.BufferGeometry,
       THREE.Mesh);
 
@@ -44,14 +30,14 @@ export default class RectangleGroup
       depthTest: false
     });
 
-    this.initializeAttributes(count, 4)
+    this.initializeAttributes(count, RectangleDefinition.unitVertCount)
       .setIndex([0, 1, 3, 1, 2, 3])
       .addShaderProperties({
         vertexShader: vs,
         fragmentShader: fs,
       })
       .applyMaterial(material)
-      .createObjects(Rectangle2DObject);
+      .createObjects(RectangleObject);
 
 
 

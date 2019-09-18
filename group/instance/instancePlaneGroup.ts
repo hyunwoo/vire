@@ -4,14 +4,22 @@ import * as THREE from 'three';
 
 export default class InstancePlaneGroup extends InstanceGroup {
 
-  public constructor(scene: THREE.Scene, count: number, radius: number, segements: number) {
-    super(scene, count, radius, segements);
+  public constructor(
+    scene: THREE.Scene,
+    count: number,
+    width?: number,
+    height?: number,
+    widthSegements?: number,
+    heightSegements?: number) {
+    super(scene, count, width, height, widthSegements, heightSegements);
   }
   public initInstanceGeometry(
     geometry: THREE.InstancedBufferGeometry,
-    radius: number,
-    segements: number) {
-    const geo = new THREE.CircleBufferGeometry(radius, segements);
+    width?: number,
+    height?: number,
+    widthSegements?: number,
+    heightSegements?: number) {
+    const geo = new THREE.PlaneBufferGeometry(width, height, widthSegements, heightSegements);
     geometry.index = geo.index;
     geometry.addAttribute('instancePosition', geo.attributes.position);
     geometry.addAttribute('instanceNormal', geo.attributes.normal);
