@@ -8,6 +8,7 @@ import fs from '!!raw-loader!./default.frag';
 import { RenderGroup } from '../base';
 import PointObject from './pointObject';
 import { PointProperties, PointDefinition } from './index';
+import { Vector3 } from 'three';
 
 // TODO BufferGroup에 대한 재정의가 필요하다.
 
@@ -26,7 +27,10 @@ export default class PoingGroup
     const material = new THREE.RawShaderMaterial({
       uniforms: {
         time: { value: 1.0 },
-        sineTime: { value: 1.0 }
+        sineTime: { value: 1.0 },
+        // cameraPosition: {
+        //   value: new THREE.Vector3(0, 0, 0)
+        // }
       },
       vertexShader: vs,
       fragmentShader: fs,
@@ -42,6 +46,7 @@ export default class PoingGroup
     console.log(this.props);
     this.props.color.fill(1);
     this.props.position.fill(0);
+    this.props.size.fill(1);
   }
 
 
@@ -50,6 +55,8 @@ export default class PoingGroup
   }
 
   public onUpdate() {
+    const mat = (this.material as THREE.RawShaderMaterial);
+    // mat.uniforms.cameraPosition.value = this.camera.position;
     // TODO
   }
 }

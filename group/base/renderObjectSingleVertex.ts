@@ -13,9 +13,11 @@ import {
   ColorValue,
   ColorHSLValue,
   ColorHexValue,
+  ThreeDimensionValue,
+  DimensionColorValue,
 } from '../../dimensionValues';
 import helper from '@/vire/helper';
-import undefined from 'firebase/empty-import';
+
 
 
 export default abstract class RenderObjectSingleVertex<P extends ShapeVertexProperties>
@@ -39,6 +41,7 @@ export default abstract class RenderObjectSingleVertex<P extends ShapeVertexProp
       z: this.props.position[this.propertyOffsets.position + 2],
     };
   }
+
   public set position(arg: PositionValue) {
     if (this.reservedProps.position === undefined) {
       throw new Error('오브젝트에 position 속성이 없습니다.');
@@ -49,10 +52,23 @@ export default abstract class RenderObjectSingleVertex<P extends ShapeVertexProp
       arg.z !== undefined ? arg.z : this.reservedProps.position[2],
     ]);
   }
+
   public setPotision(arg: PositionValue): this {
     this.position = arg;
     return this;
   }
+
+  public getPosition(): ThreeDimensionValue {
+    if (this.reservedProps.position === undefined) {
+      throw new Error('오브젝트에 position 속성이 없습니다.');
+    }
+    return {
+      x: this.props.position[this.propertyOffsets.position],
+      y: this.props.position[this.propertyOffsets.position + 1],
+      z: this.props.position[this.propertyOffsets.position + 2],
+    };
+  }
+
 
   public get rotate(): RotationValue {
     if (this.reservedProps.rotation === undefined) {
@@ -128,7 +144,7 @@ export default abstract class RenderObjectSingleVertex<P extends ShapeVertexProp
     };
   }
   public set color(arg: ColorValue) {
-    if (this.reservedProps.size === undefined) {
+    if (this.reservedProps.color === undefined) {
       throw new Error('오브젝트에 color 속성이 없습니다.');
     }
     this.setPropertyValues('color', [
@@ -144,7 +160,7 @@ export default abstract class RenderObjectSingleVertex<P extends ShapeVertexProp
   }
 
   public set colorHSL(arg: ColorHSLValue) {
-    if (this.reservedProps.size === undefined) {
+    if (this.reservedProps.color === undefined) {
       throw new Error('오브젝트에 color 속성이 없습니다.');
     }
     const c = helper.Util.toColorHSLValueAsColorValue(arg);
@@ -157,16 +173,44 @@ export default abstract class RenderObjectSingleVertex<P extends ShapeVertexProp
   }
 
 
-  public set colorHex(arg: ColorHexValue) {
-    if (this.reservedProps.size === undefined) {
+
+  public set colorHex(arg: ColorHexValue | string) {
+    if (this.reservedProps.color === undefined) {
       throw new Error('오브젝트에 color 속성이 없습니다.');
     }
-    const c = helper.Util.toColorHexValueAsColorValue(arg);
-    this.setPropertyValues('color', [c.r, c.g, c.b, c.a]);
+
+    if (typeof arg === 'string') {
+      const color = new THREE.Color(arg);
+      const c: DimensionColorValue = {
+        r: color.r,
+        g: color.g,
+        b: color.b,
+        a: 1,
+      };
+      this.setPropertyValues('color', [c.r, c.g, c.b, c.a]);
+    } else {
+      const c = helper.Util.toColorHexValueAsColorValue(arg);
+      this.setPropertyValues('color', [c.r, c.g, c.b, c.a]);
+    }
+
   }
-  public setColorHex(arg: ColorHexValue): this {
-    const c = helper.Util.toColorHexValueAsColorValue(arg);
-    this.color = c;
+  public setColorHex(arg: ColorHexValue): void;
+  public setColorHex(arg: string, opacity?: number): void;
+  public setColorHex(arg: ColorHexValue | string, opacity?: number): this {
+
+    if (typeof arg === 'string') {
+      const color = new THREE.Color(arg);
+      const c: DimensionColorValue = {
+        r: color.r,
+        g: color.g,
+        b: color.b,
+        a: opacity === undefined ? 1 : opacity,
+      };
+      this.setPropertyValues('color', [c.r, c.g, c.b, c.a]);
+    } else {
+      const c = helper.Util.toColorHexValueAsColorValue(arg);
+      this.setPropertyValues('color', [c.r, c.g, c.b, c.a]);
+    }
     return this;
   }
 

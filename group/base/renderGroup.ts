@@ -199,6 +199,12 @@ export default abstract class RenderGroup<
    * 생성시 설정된 scene에서 group을 때어낸다.
    */
   public detachToScene() {
+    try {
+      this.geometry.dispose();
+      this.material.dispose();
+    } catch (e) {
+      console.error('failed dispose');
+    }
     this.scene.remove(this.mesh);
   }
 
@@ -224,6 +230,7 @@ export default abstract class RenderGroup<
 
     const keys = Object.keys(this.updateReservedObjects);
 
+    // this.material.uniforms
     keys.forEach(index => {
       this.updateReservedObjects[index].update();
     });
@@ -233,7 +240,9 @@ export default abstract class RenderGroup<
       }
     }
 
-    // this.geometry.computeBoundingBox();
+
+    this.geometry.computeBoundingBox();
+    this.geometry.computeBoundingSphere();
     // this.geometry.computeVertexNormals();
     this.removeReservedIndices.forEach(index =>
       delete this.updateReservedObjects[index]);

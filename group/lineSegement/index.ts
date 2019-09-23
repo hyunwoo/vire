@@ -1,5 +1,6 @@
 import { ShapeVertexProperties, ShapeDefinition } from '../base';
-
+import LineSegementGroup from './lineSegementGroup';
+import LineSegementObject from './lineSegementObject';
 interface LineSegementProperties extends ShapeVertexProperties {
   position: number;
   color: number;
@@ -16,4 +17,9 @@ const lineDefinition: ShapeDefinition<LineSegementProperties> = {
 export {
   LineSegementProperties,
   lineDefinition as LineDefinition
+};
+
+export {
+  LineSegementGroup,
+  LineSegementObject
 };

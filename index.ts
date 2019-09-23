@@ -80,6 +80,7 @@ class VIRE {
     this.height = element.clientHeight;
     this.is3D = use3D ? use3D : false;
 
+
     // event checked
     this._beforeUpdate = () => {/** empty */ };
     this._update = () => { /** empty */ };
@@ -119,19 +120,61 @@ class VIRE {
     this.scene.add(this.camera);
     this.render();
 
+
     this.camera.up = new Vector3(0, 0, 1);
-    // this.controller = new OrbitControls(this.camera, this.renderer.domElement);
-    // this.controller.enableRotate = false;
+    this.orbitController = new OrbitControls(this.camera, this.renderer.domElement);
+    this.orbitController.enableRotate = true;
 
     // Stat
 
     element.addEventListener('mousemove', this.mouseMove.bind(this));
     window.addEventListener('resize', this.debounceResize, false);
   }
+  public appendGridHelper(size: number, segementCount: number): void;
+  public appendGridHelper(
+    size: number, segementCount: number,
+    axisColor: string | number, segementColor: string | number): void;
+  public appendGridHelper(
+    size: number, segementCount: number,
+    axisColor?: string | number, segementColor?: string | number): void {
+    axisColor = axisColor ? axisColor : '#333';
+    segementColor = segementColor ? segementColor : '#555';
 
-  public appendStats(style: Partial<CSSStyleDeclaration>) {
+    const gridHelper = new THREE.GridHelper(size, segementCount,
+      new THREE.Color(axisColor),
+      new THREE.Color(segementColor));
+    gridHelper.rotateX(Math.PI / 2);
+
+    this.scene.add(gridHelper);
+  }
+
+  public appendGridHelperWithRotate(
+    size: number, segementCount: number,
+    axisColor: string | number, segementColor: string | number,
+    rotateX?: number,
+    rotateY?: number,
+    rotateZ?: number) {
+    axisColor = axisColor ? axisColor : '#333';
+    segementColor = segementColor ? segementColor : '#555';
+
+    const gridHelper = new THREE.GridHelper(size, segementCount,
+      new THREE.Color(axisColor),
+      new THREE.Color(segementColor));
+    rotateX = rotateX ? rotateX : 0;
+    rotateY = rotateY ? rotateY : 0;
+    rotateZ = rotateZ ? rotateZ : 0;
+    gridHelper.rotateX(rotateX * Math.PI / 180);
+    gridHelper.rotateY(rotateY * Math.PI / 180);
+    gridHelper.rotateZ(rotateZ * Math.PI / 180);
+
+    this.scene.add(gridHelper);
+  }
+
+  public appendStats(style?: Partial<CSSStyleDeclaration>) {
     this.stats = new Stats();
-    Object.assign(this.stats.dom.style, style);
+    if (style) {
+      Object.assign(this.stats.dom.style, style);
+    }
     this.element.appendChild(this.stats.dom);
   }
 
@@ -226,6 +269,7 @@ class VIRE {
     if (index >= 0) {
       const group = this.renderGroups[index];
       group.detachToScene();
+
       this.renderGroups.splice(index, 1);
       return group;
     } else {
@@ -235,6 +279,7 @@ class VIRE {
 
   public release() {
     this.scene.dispose();
+    this.renderGroups.forEach(g => g.detachToScene());
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     window.cancelAnimationFrame(this.requestAnimationID);
@@ -302,7 +347,7 @@ class VIRE {
     // console.log(stats.update());
     this.camera.updateProjectionMatrix();
     if (this.orbitController && this.orbitController.update !== undefined) {
-      this.orbitController.enableRotate = false;
+      this.orbitController.enableRotate = true;
       this.orbitController.update();
     }
 

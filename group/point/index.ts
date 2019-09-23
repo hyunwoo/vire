@@ -11,6 +11,7 @@ const pointDefinition: ShapeDefinition<PointProperties> = {
   shapePropoperties: {
     position: 3,
     color: 4,
+    size: 3,
   },
   unitVertCount: 1,
 };

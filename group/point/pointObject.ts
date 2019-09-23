@@ -10,12 +10,13 @@ import {
   PositionValue
 } from '@/vire/dimensionValues';
 import helper from '@/vire/helper';
-import RenderObjectMultiVertex from '../base/renderObjectMultiVertex';
+import RenderObjectSingleVertex from '../base/renderObjectSingleVertex';
+
 
 
 
 export default class PointObject
-  extends RenderObjectMultiVertex<PointProperties> {
+  extends RenderObjectSingleVertex<PointProperties> {
   public constructor(
     parent: RenderGroup<PointProperties, any>,
     unit: PointProperties,
@@ -34,6 +35,19 @@ export default class PointObject
         ['x', 'y', 'z']
       ));
   }
+  public set scale(size: number) {
+    if (this.reservedProps.size === undefined) {
+      throw new Error('오브젝트에 size 속성이 없습니다.');
+    }
+    this.setSize({ x: size });
+  }
+  public get scale() {
+    if (this.reservedProps.size === undefined) {
+      throw new Error('오브젝트에 size 속성이 없습니다.');
+    }
+    return this.props.size[this.propertyOffsets.size];
+  }
+
 
 
 }
