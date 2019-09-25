@@ -43,6 +43,7 @@ class VIRE {
   public readonly scene: THREE.Scene;
   public readonly renderGroups: Array<RenderGroup<any, any>> = [];
   public readonly raycaster: THREE.Raycaster = new THREE.Raycaster();
+
   public mouse: VLMouse = {
     clientX: 0,
     clientY: 0,
@@ -60,6 +61,7 @@ class VIRE {
   private startTime: number = new Date().getTime();
   private flagTime: number = new Date().getTime();
   private requestAnimationID: number = 0;
+  private elementGroups: { [key: string]: ElementGroup } = {};
   private debounceResize = debounce(this.resize.bind(this), 100);
 
 
@@ -122,8 +124,8 @@ class VIRE {
 
 
     this.camera.up = new Vector3(0, 0, 1);
-    this.orbitController = new OrbitControls(this.camera, this.renderer.domElement);
-    this.orbitController.enableRotate = true;
+    // this.orbitController = new OrbitControls(this.camera, this.renderer.domElement);
+    // this.orbitController.enableRotate = true;
 
     // Stat
 
@@ -190,9 +192,25 @@ class VIRE {
     const tg = new ElementGroup(this.element, {
       zIndex: '0'
     });
+    this.elementGroups[tg.id] = tg;
     console.log(tg);
     return tg;
   }
+
+  public removeElementGroup(group: ElementGroup): void;
+  public removeElementGroup(id: string): void;
+  public removeElementGroup(arg: ElementGroup | string) {
+    const id = typeof arg === 'string' ? arg : arg.id;
+    if (this.elementGroups[id]) {
+      const group = this.elementGroups[id];
+      group.releaseDOM();
+
+      delete this.elementGroups[id];
+    } else {
+      throw new Error(`해당 그룹은 존재하지 않습니다. [${id}]`);
+    }
+  }
+
 
   // 굳이 모든 RenderGroup을 상속한 도형을 명시하는 이유는 사용할 때 명확성을 위함.
   public createGroup<P extends RenderGroup<any, any>>(
@@ -347,7 +365,7 @@ class VIRE {
     // console.log(stats.update());
     this.camera.updateProjectionMatrix();
     if (this.orbitController && this.orbitController.update !== undefined) {
-      this.orbitController.enableRotate = true;
+      // this.orbitController.enableRotate = true;
       this.orbitController.update();
     }
 

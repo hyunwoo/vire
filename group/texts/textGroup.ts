@@ -71,6 +71,10 @@ export default class ElementGroup {
       delete this.childElements[id];
     }
   }
+
+  public releaseDOM() {
+    this.element.remove();
+  }
   // public addText(): TextObject {
   //   const text = new TextObject(this.element);
   //   return text;
