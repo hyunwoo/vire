@@ -39,9 +39,18 @@ export default class ElementGroup {
 
   public addElement(template: string, position?: string) {
     position = position ? position : 'absolute';
+
+
     const ele = new ElementObject(this, this.element, template);
     this.childElements[ele.id] = ele;
     ele.style.position = position;
+
+    if (position === 'absolute') {
+      // console.log('cw', this.parent.clientWidth);
+      // ele.style.left = `${this.parent.clientWidth / 2}px`;
+      // ele.style.top = `${this.parent.clientHeight / 2}px`;
+    }
+
     return ele;
   }
   /**
