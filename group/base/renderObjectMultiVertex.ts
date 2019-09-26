@@ -101,7 +101,7 @@ export default abstract class RenderObjectMultiVertex<P extends ShapeVertexPrope
     this.color = c;
   }
   public setColorHSL(arg: ColorHSLValues): this {
-    if (this.reservedProps.size === undefined) {
+    if (this.reservedProps.color === undefined) {
       throw new Error('오브젝트에 color 속성이 없습니다.');
     }
     const c = helper.Util.toColorHSLValuesAsColorValues(arg,
