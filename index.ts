@@ -131,6 +131,7 @@ class VIRE {
 
     element.addEventListener('mousemove', this.mouseMove.bind(this));
     window.addEventListener('resize', this.debounceResize, false);
+    console.log('[VIRE] created');
   }
   public appendGridHelper(size: number, segementCount: number): void;
   public appendGridHelper(

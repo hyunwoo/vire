@@ -56,6 +56,7 @@ export default abstract class RenderGroup<
   }
 
 
+
   /**
    * @description
    * BufferGeometry 기반으로 다량의 오브젝트를 관리하는 그룹.
@@ -109,6 +110,18 @@ export default abstract class RenderGroup<
   public get shaderProperties() {
     return this._shaderProperties;
   }
+
+
+  public setObjectsAnimationSpeed(value: number) {
+    this._objects.forEach(o => o.setAnimationSpeed(value));
+  }
+
+  public useObjectsAnimation(use: boolean, value: number) {
+    value = value === undefined ? (use ? 0.1 : 1) : value;
+    this.setObjectsAnimationSpeed(value);
+  }
+
+
 
   /**
    * @description
