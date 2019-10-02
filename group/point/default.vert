@@ -14,5 +14,5 @@ void main(){
   
   gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);
   vec3 dist=gl_Position.xyz-cameraPosition;
-  gl_PointSize=3.*size.x;
+  gl_PointSize=1.*size.x;
 }

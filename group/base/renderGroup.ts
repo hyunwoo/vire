@@ -13,8 +13,9 @@ import RenderObject from './renderObject';
 
 export default abstract class RenderGroup<
   P extends ShapeVertexProperties, R extends RenderObject<P>> {
+
   public readonly id: string;
-  protected readonly material: THREE.Material;
+
   protected readonly geometry: THREE.BufferGeometry;
   protected readonly attr: RenderGroupAttributes<P>;
   protected readonly props: RenderProperties<P>;
@@ -23,6 +24,7 @@ export default abstract class RenderGroup<
   protected readonly unit: P;
   protected scene: THREE.Scene;
   protected mesh!: THREE.Object3D;
+  protected material: THREE.Material;
   protected generateCount: number = 0;
   protected unitVertCount: number = 0;
   protected camera!: THREE.Camera;
@@ -156,8 +158,13 @@ export default abstract class RenderGroup<
    */
   public applyMaterial(material?: THREE.Material) {
     const target: THREE.Mesh = this.mesh as THREE.Mesh;
+    const mat = material ? material : new THREE.RawShaderMaterial(this._shaderProperties);
     if (target.material) {
-      target.material = material ? material : new THREE.RawShaderMaterial(this._shaderProperties);
+      target.material = mat;
+    }
+    if (this.material) {
+      this.material.dispose();
+      this.material = mat;
     }
     return this;
   }
@@ -239,7 +246,7 @@ export default abstract class RenderGroup<
     this.removeReservedIndices.push(updateObject.index);
   }
 
-  public update() {
+  public update(time: number, deltaTime: number, currentFrame: number) {
 
     const keys = Object.keys(this.updateReservedObjects);
 
@@ -261,7 +268,7 @@ export default abstract class RenderGroup<
       delete this.updateReservedObjects[index]);
     this.removeReservedIndices = [];
 
-    this.onUpdate();
+    this.onUpdate(time, deltaTime, currentFrame);
 
 
   }
@@ -272,7 +279,7 @@ export default abstract class RenderGroup<
     this.onRender();
   }
 
-  public abstract onUpdate(): void;
+  public abstract onUpdate(time?: number, deltaTime?: number, currentFrame?: number): void;
   public abstract onRender(): void;
 
   /**
