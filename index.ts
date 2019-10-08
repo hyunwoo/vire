@@ -156,18 +156,13 @@ class VIRE {
     rotateX?: number,
     rotateY?: number,
     rotateZ?: number) {
-    axisColor = axisColor ? axisColor : '#333';
-    segementColor = segementColor ? segementColor : '#555';
 
     const gridHelper = new THREE.GridHelper(size, segementCount,
-      new THREE.Color(axisColor),
-      new THREE.Color(segementColor));
-    rotateX = rotateX ? rotateX : 0;
-    rotateY = rotateY ? rotateY : 0;
-    rotateZ = rotateZ ? rotateZ : 0;
-    gridHelper.rotateX(rotateX * Math.PI / 180);
-    gridHelper.rotateY(rotateY * Math.PI / 180);
-    gridHelper.rotateZ(rotateZ * Math.PI / 180);
+      new THREE.Color(axisColor ? axisColor : '#333'),
+      new THREE.Color(segementColor ? segementColor : '#555'));
+    gridHelper.rotateX((rotateX ? rotateX : 0) * Math.PI / 180);
+    gridHelper.rotateY((rotateY ? rotateY : 0) * Math.PI / 180);
+    gridHelper.rotateZ((rotateZ ? rotateZ : 0) * Math.PI / 180);
 
     this.scene.add(gridHelper);
   }
@@ -377,10 +372,7 @@ class VIRE {
     this.time = (this.flagTime - this.startTime) * 0.001;
     this.deltaTime = (currentTime - this.flagTime) * 0.001;
     this.flagTime = currentTime;
-
   }
-
-
 }
 
 export default VIRE;

@@ -9,6 +9,8 @@ export default abstract class RenderObject<P extends ShapeVertexProperties> {
   protected readonly propertyKeys: Array<keyof P>;
   protected readonly propertyOffsets: { [name in keyof P]: number };
   protected readonly unitVertCount: number;
+  protected lerpAnimateValue: number = 0.1;
+  protected lerpCompleteDistance: number = 0.01;
 
   public constructor(
     parent: RenderGroup<P, any>,
@@ -43,6 +45,14 @@ export default abstract class RenderObject<P extends ShapeVertexProperties> {
     }
   }
 
+  public setAnimationSpeed(value: number) {
+    this.lerpAnimateValue = value;
+  }
+  public setAnimation(use: boolean, value: number) {
+    value = value === undefined ? (use ? 0.1 : 1) : value;
+    this.setAnimationSpeed(value);
+  }
+
   public update() {
     this.beforeUpdate();
     let complete = true;
@@ -51,9 +61,9 @@ export default abstract class RenderObject<P extends ShapeVertexProperties> {
         this.props[prop],
         this.reservedProps[prop],
         this.propertyOffsets[prop],
-        0.1
+        this.lerpAnimateValue
       );
-      if (dist > 0.01) {
+      if (dist > this.lerpCompleteDistance) {
         complete = false;
       }
     }

@@ -14,13 +14,13 @@ import RenderObject from './renderObject';
 export default abstract class RenderGroup<
   P extends ShapeVertexProperties, R extends RenderObject<P>> {
   public readonly id: string;
-  protected readonly material: THREE.Material;
   protected readonly geometry: THREE.BufferGeometry;
   protected readonly attr: RenderGroupAttributes<P>;
   protected readonly props: RenderProperties<P>;
   protected readonly _objects: R[] = [];
   protected readonly propertyKeys: Array<keyof P>;
   protected readonly unit: P;
+  protected material: THREE.Material;
   protected scene: THREE.Scene;
   protected mesh!: THREE.Object3D;
   protected generateCount: number = 0;
@@ -53,6 +53,15 @@ export default abstract class RenderGroup<
    */
   public get objects(): R[] {
     return this._objects;
+  }
+
+  public setObjectsAnimationSpeed(value: number) {
+    this._objects.forEach(o => o.setAnimationSpeed(value));
+  }
+
+  public useObjectsAnimation(use: boolean, value: number) {
+    value = value === undefined ? (use ? 0.1 : 1) : value;
+    this.setObjectsAnimationSpeed(value);
   }
 
 
@@ -135,6 +144,7 @@ export default abstract class RenderGroup<
     }
   }
 
+
   /**
    * @description
    * Material을 적용한다.
@@ -143,8 +153,13 @@ export default abstract class RenderGroup<
    */
   public applyMaterial(material?: THREE.Material) {
     const target: THREE.Mesh = this.mesh as THREE.Mesh;
+    const mat = material ? material : new THREE.RawShaderMaterial(this._shaderProperties);
     if (target.material) {
-      target.material = material ? material : new THREE.RawShaderMaterial(this._shaderProperties);
+      target.material = mat;
+    }
+    if (this.material) {
+      this.material.dispose();
+      this.material = mat;
     }
     return this;
   }
@@ -192,6 +207,7 @@ export default abstract class RenderGroup<
    */
   public attachToScene() {
     this.scene.add(this.mesh);
+
   }
 
   /**
