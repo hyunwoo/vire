@@ -8,6 +8,8 @@ import fs from '!!raw-loader!./default.frag';
 import { RenderGroup } from '../base';
 import PointObject from './pointObject';
 import { PointProperties, PointDefinition } from './index';
+
+import { Vector3 } from 'three';
 import { PointGroupType, PointGroupTypeTextures } from './pointGroupType';
 
 // TODO BufferGroup에 대한 재정의가 필요하다.
@@ -21,6 +23,7 @@ export default class PoingGroup
 
   private readonly defaultTextureURL = '/texture/circle_32.png';
   private texture: THREE.Texture | undefined;
+
   public constructor(scene: THREE.Scene, count: number) {
     super(scene, PointDefinition,
       THREE.BufferGeometry,
@@ -30,8 +33,11 @@ export default class PoingGroup
       uniforms: {
         time: { value: 1.0 },
         sineTime: { value: 1.0 },
-        texture: { value: this.texture },
-      }, vertexShader: vs,
+
+        texture: { value: this.texture }
+      },
+      vertexShader: vs,
+
       fragmentShader: fs,
       side: THREE.DoubleSide,
       transparent: true,
@@ -44,10 +50,9 @@ export default class PoingGroup
     this.props.color.fill(1);
     this.props.position.fill(0);
     this.props.size.fill(1);
-    this.setType('hexagonal');
 
+    this.setType('rect');
   }
-
 
   public setType(type: keyof PointGroupType) {
     const url = PointGroupTypeTextures[type];

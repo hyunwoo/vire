@@ -9,6 +9,7 @@ export default abstract class RenderObject<P extends ShapeVertexProperties> {
   protected readonly propertyKeys: Array<keyof P>;
   protected readonly propertyOffsets: { [name in keyof P]: number };
   protected readonly unitVertCount: number;
+  protected injectedData: any;
   protected lerpAnimateValue: number = 0.1;
   protected lerpCompleteDistance: number = 0.01;
 
@@ -45,6 +46,19 @@ export default abstract class RenderObject<P extends ShapeVertexProperties> {
     }
   }
 
+
+  public injtectData(data: any) {
+    this.injectedData = data;
+  }
+  public getInjectedData<T>() {
+    if (this.injectedData === undefined) {
+      throw new Error('데이터가 설정되지 않았습니다.');
+    } else {
+      return this.injectedData as T;
+    }
+  }
+
+
   public setAnimationSpeed(value: number) {
     this.lerpAnimateValue = value;
   }
@@ -61,7 +75,8 @@ export default abstract class RenderObject<P extends ShapeVertexProperties> {
         this.props[prop],
         this.reservedProps[prop],
         this.propertyOffsets[prop],
-        this.lerpAnimateValue
+        this.lerpAnimateValue,
+
       );
       if (dist > this.lerpCompleteDistance) {
         complete = false;

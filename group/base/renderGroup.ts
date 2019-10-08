@@ -13,7 +13,9 @@ import RenderObject from './renderObject';
 
 export default abstract class RenderGroup<
   P extends ShapeVertexProperties, R extends RenderObject<P>> {
+
   public readonly id: string;
+
   protected readonly geometry: THREE.BufferGeometry;
   protected readonly attr: RenderGroupAttributes<P>;
   protected readonly props: RenderProperties<P>;
@@ -53,15 +55,6 @@ export default abstract class RenderGroup<
    */
   public get objects(): R[] {
     return this._objects;
-  }
-
-  public setObjectsAnimationSpeed(value: number) {
-    this._objects.forEach(o => o.setAnimationSpeed(value));
-  }
-
-  public useObjectsAnimation(use: boolean, value: number) {
-    value = value === undefined ? (use ? 0.1 : 1) : value;
-    this.setObjectsAnimationSpeed(value);
   }
 
 
@@ -118,6 +111,18 @@ export default abstract class RenderGroup<
   public get shaderProperties() {
     return this._shaderProperties;
   }
+
+
+  public setObjectsAnimationSpeed(value: number) {
+    this._objects.forEach(o => o.setAnimationSpeed(value));
+  }
+
+  public useObjectsAnimation(use: boolean, value: number) {
+    value = value === undefined ? (use ? 0.1 : 1) : value;
+    this.setObjectsAnimationSpeed(value);
+  }
+
+
 
   /**
    * @description
@@ -242,7 +247,7 @@ export default abstract class RenderGroup<
     this.removeReservedIndices.push(updateObject.index);
   }
 
-  public update() {
+  public update(time: number, deltaTime: number, currentFrame: number) {
 
     const keys = Object.keys(this.updateReservedObjects);
 
@@ -264,7 +269,7 @@ export default abstract class RenderGroup<
       delete this.updateReservedObjects[index]);
     this.removeReservedIndices = [];
 
-    this.onUpdate();
+    this.onUpdate(time, deltaTime, currentFrame);
 
 
   }
@@ -275,7 +280,7 @@ export default abstract class RenderGroup<
     this.onRender();
   }
 
-  public abstract onUpdate(): void;
+  public abstract onUpdate(time?: number, deltaTime?: number, currentFrame?: number): void;
   public abstract onRender(): void;
 
   /**

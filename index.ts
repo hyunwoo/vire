@@ -89,7 +89,7 @@ class VIRE {
     this._rendered = () => {/** empty */ };
 
     // init renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(this.width, this.height);
     element.appendChild(this.renderer.domElement);
@@ -131,6 +131,7 @@ class VIRE {
 
     element.addEventListener('mousemove', this.mouseMove.bind(this));
     window.addEventListener('resize', this.debounceResize, false);
+    console.log('[VIRE] created');
   }
   public appendGridHelper(size: number, segementCount: number): void;
   public appendGridHelper(
@@ -252,7 +253,10 @@ class VIRE {
   public setBackgroundColor(hex: string): void;
   public setBackgroundColor(r: number, g: number, b: number): void;
   public setBackgroundColor(r: string | number, g?: number, b?: number) {
-    this.scene.background = new THREE.Color(...arguments);
+    this.renderer.setClearColor(new THREE.Color(...arguments));
+  }
+  public setBackgroundClearAplha(opacity: number) {
+    this.renderer.setClearAlpha(opacity);
   }
 
 
@@ -301,6 +305,7 @@ class VIRE {
     this.renderer.domElement = null;
     // @ts-ignore release force
     this.renderer = null;
+    console.log('[VIRE] released');
   }
 
 
@@ -345,7 +350,7 @@ class VIRE {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     for (const g of this.renderGroups) {
-      g.update();
+      g.update(this.time, this.deltaTime, this.currentFrame);
     }
     this._update(this.time, this.deltaTime, this.currentFrame);
     // console.log(arr);

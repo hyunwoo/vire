@@ -11,8 +11,6 @@ import { LineSegementProperties, LineDefinition } from './index';
 
 // TODO BufferGroup에 대한 재정의가 필요하다.
 
-
-
 export default class LineSegementGroup
   extends RenderGroup<LineSegementProperties, LineSegementObject> {
   // private material: THREE.Material;
